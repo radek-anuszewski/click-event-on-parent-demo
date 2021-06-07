@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Click event on parent demo</title>
+  <style>
+    body {
+        padding: 32px;
+    }
+
+    table {
+        margin-top: 32px;
+        width: 350px;
+    }
+
+    td {
+        text-align: center;
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    th, td {
+        padding: 8px;
+    }
+
+    table, td {
+        border: 1px solid black;
+    }
+  </style>
+  <script type="module">
+    const arrayHelper = Array(1000).fill(null);
+    document.querySelector('.tableBody')
+      .innerHTML = arrayHelper
+      .map((_, index) =>
+        `
+          <tr>
+            <td>
+              Name ${index}
+            </td>
+            <td>
+              Surname ${index}
+            </td>
+            <td>
+              <button class="button">
+                Remove ${index} element
+              </button>
+            </td>
+          </tr>
+        `).join('');
+
+    const tableCaption = document.querySelector('.caption');
+
+    const wait = timeout => new Promise(resolve => setTimeout(resolve, timeout));
+
+    const removeElement = async el => {
+      const timeout = 2000;
+      await wait(timeout); // to emulate network request
+      const row = el.closest('tr');
+      row.parentElement.removeChild(row);
+    };
+
+    const cleanPreviousListeners = () => {
+      document.querySelector('.tableBody')
+        .removeEventListener('click', onChildButtonClicked);
+      document.querySelectorAll('.button').forEach(el => {
+        el.removeEventListener('click', onButtonClicked);
+      });
+    }
+
+    const onButtonClicked = e => removeElement(e.target);
+
+    const onChildButtonClicked = e => {
+      if (e.target.classList.contains('button')) {
+        removeElement(e.target);
+      }
+    };
+
+    const measurePerformance = functionToMeasure => {
+      const t0 = performance.now();
+      functionToMeasure();
+      const t1 = performance.now();
+      alert(`time: ${t1 - t0}`);
+    };
+
+    const addSeparatedEvents = async () => {
+      tableCaption.innerHTML = 'Separated events per every button';
+      await wait(0); // to update table caption
+      cleanPreviousListeners();
+
+      measurePerformance(() => {
+        document.querySelectorAll('.button').forEach(el => {
+          el.addEventListener('click', onButtonClicked);
+        });
+      })
+    };
+    const addParentEvent = async () => {
+      tableCaption.innerHTML = 'One event on table body';
+      await wait(0); // to update table caption
+      cleanPreviousListeners();
+
+      measurePerformance(() => {
+        document.querySelector('.tableBody')
+          .addEventListener('click', onChildButtonClicked);
+      });
+    }
+    document.querySelector('#withSeparatedEvents')
+      .addEventListener('click', addSeparatedEvents);
+    document.querySelector('#withParentEvent')
+      .addEventListener('click', addParentEvent);
+  </script>
+</head>
+<body>
+<button id="withSeparatedEvents">
+  Add separated events
+</button>
+<button id="withParentEvent">
+  Add one parent event
+</button>
+<table>
+  <caption class="caption">
+    Please click one of buttons to attach event listeners
+  </caption>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Surname</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody class="tableBody">
+  <!-- To be filled with rows with elements -->
+  </tbody>
+</table>
+</body>
+</html>
